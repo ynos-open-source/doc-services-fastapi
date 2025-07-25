@@ -1,0 +1,72 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  IMAGE_NAME: doc_service
+  DEPLOY_SERVER: $SERVER_USER@$SERVER_IP
+  DEPLOY_PATH: /opt/app/doc_service
+  REGISTRY: reg.yn59.cn/ynos-cn
+  DOCKER_USERNAME: $REG_USER
+  DOCKER_PASSWORD: $REG_PASSWORD
+
+build:
+  stage: build
+  tags:
+    - build # 使用Docker镜像
+  script:
+    - echo "同步子模块"
+    - git submodule update --init --recursive
+    - echo "开始构建镜像"
+    - echo $(ls)
+    - export IMAGE_TAG=$(date "+%Y%m%d-%H%M")
+    - echo "构建镜像:$REGISTRY/$IMAGE_NAME(标签:latest和$IMAGE_TAG)"
+    # Docker 登录及构建
+    - echo "$DOCKER_PASSWORD" | docker login $REGISTRY -u $DOCKER_USERNAME --password-stdin
+    - docker build -t $REGISTRY/$IMAGE_NAME:latest -t $REGISTRY/$IMAGE_NAME:$IMAGE_TAG -f docker/Dockerfile .
+    # 推送双标签镜像
+    - docker push $REGISTRY/$IMAGE_NAME:latest
+    - docker push $REGISTRY/$IMAGE_NAME:$IMAGE_TAG
+    - docker logout $REGISTRY
+    - echo "构建完成"
+    - echo "删除本地镜像"
+    - docker rmi $REGISTRY/$IMAGE_NAME:latest
+    - docker rmi $REGISTRY/$IMAGE_NAME:$IMAGE_TAG
+    - echo "删除本地镜像完成"
+  only:
+    - main # 仅main分支触发
+
+deploy:
+  stage: deploy
+  tags:
+    - deploy # 使用Docker镜像
+  script:
+    # 检查服务器连通性
+    - echo "测试服务器连接..."
+    - ssh -o ConnectTimeout=5 ${DEPLOY_SERVER} "exit 0" || (echo "无法连接服务器"; exit 1)
+
+    # 创建目录（带错误处理）
+    - echo "检查部署目录..."
+    - ssh ${DEPLOY_SERVER} "mkdir -p ${DEPLOY_PATH} 2>/dev/null || { echo '目录创建失败'; exit 1; }"
+
+    # 传输文件（带校验）
+    - echo "传输 compose 文件..."
+    - scp -p docker/docker-compose.yml ${DEPLOY_SERVER}:${DEPLOY_PATH}/ && ssh ${DEPLOY_SERVER} "[ -f ${DEPLOY_PATH}/docker-compose.yml ]" || (echo "文件传输失败"; exit 1)
+
+    # 部署流程（带完整回滚）
+    - |
+      if ! ssh ${DEPLOY_SERVER} "
+        cd ${DEPLOY_PATH} && 
+        docker-compose pull && 
+        docker-compose up -d --force-recreate
+      "; then
+        echo "部署失败，尝试回滚..."
+        ssh ${DEPLOY_SERVER} "
+          cd ${DEPLOY_PATH} && 
+          docker-compose down && 
+          docker-compose up -d
+        "
+        exit 1
+      fi
+  only:
+    - main # 仅main分支触发

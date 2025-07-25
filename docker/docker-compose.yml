@@ -1,0 +1,19 @@
+version: "3"
+
+services:
+  doc_service:
+    image: reg.yn59.cn/ynos-cn/doc_service:latest
+    container_name: doc_service
+    ports:
+      - "8897:8891"
+    environment:
+      - PYTHONPATH=/servers
+    extra_hosts:
+      - "sk.yn59.cn:192.168.1.99"
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
+    external: true

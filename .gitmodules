@@ -1,0 +1,4 @@
+[submodule "utils"]
+	path = utils
+	url = git@git.yn59.cn:ynos-cn/submodules/fastapi-utils.git
+	branch = main

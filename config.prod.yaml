@@ -1,0 +1,57 @@
+app:
+  title: 文档系统
+  description: 包含附件管理、审批等的 API 文档
+  version: 1.0.0
+  port: 8891
+  env: prod
+  prefix: /doc/api
+  host: 0.0.0.0
+mysql:
+  system_db:
+    host: localhost
+    port: 3306
+    user: root
+    password: 123456
+    database: system_db
+    minsize: 5
+    maxsize: 10
+  doc_db:
+    host: localhost
+    port: 3306
+    user: root
+    password: 123456
+    database: doc_db
+    minsize: 5
+    maxsize: 10
+mongodb:
+  ynos_db:
+    host: localhost
+    port: 27017
+    database: ynos_db
+    username: root
+    password: 123456
+    poolsize: 10
+redis:
+  default:
+    host: localhost
+    port: 6379
+    db: 2
+    password: 123456
+  business:
+    host: localhost
+    port: 6379
+    db: 3
+    password: 123456
+minio:
+  host: localhost
+  port: 9000
+  access_key: AW3mZwzpSn4gaqwLI9h2sSecV
+  secret_key: 1fRb3i6vvSXw9ldZWX6SSeMR4lbuDtSfHqQLVWnBsSecV
+  secure: false
+  buckets: [doc, avatar]
+jwt:
+  secret_key: "ynos"
+  algorithm: "HS256"
+  expire_minutes: 604800000 # 7 days
+logging:
+  level: INFO
