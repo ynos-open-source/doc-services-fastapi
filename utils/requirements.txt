@@ -1,0 +1,12 @@
+fastapi==0.109.0
+uvicorn==0.26.0
+aiomysql==0.2.0
+redis==5.2.1
+pyyaml
+motor==3.7.0
+uvloop==0.21.0
+httptools==0.6.4
+bcrypt==4.2.1
+PyJWT==2.8.0
+python-multipart==0.0.6
+minio==7.2.15
